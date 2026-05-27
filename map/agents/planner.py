@@ -40,10 +40,13 @@ class PlannerAgent(BaseAgent):
         return "planner"
 
     async def run(self, subtask: Subtask, session: Session) -> dict[str, Any]:
-        prompt = (
-            f"Task: {subtask.input['description']}\n"
-            f"Repository: {subtask.input.get('repo_path', 'unknown')}"
-        )
+        parts = [
+            f"Task: {subtask.input['description']}",
+            f"Repository: {subtask.input.get('repo_path', 'unknown')}",
+        ]
+        if ctx := subtask.input.get("context"):
+            parts += ["", "Additional context:", ctx]
+        prompt = "\n".join(parts)
 
         response = await self._client.messages.create(
             model=self._model,

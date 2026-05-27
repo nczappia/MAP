@@ -19,12 +19,15 @@ def make_client(response_text: str) -> MagicMock:
     return client
 
 
-def make_subtask(description: str = "add a login endpoint", repo: str = "/repo") -> Subtask:
-    return Subtask(
-        session_id="s1",
-        agent="planner",
-        input={"description": description, "repo_path": repo},
-    )
+def make_subtask(
+    description: str = "add a login endpoint",
+    repo: str = "/repo",
+    context: str | None = None,
+) -> Subtask:
+    inp: dict[str, str] = {"description": description, "repo_path": repo}
+    if context:
+        inp["context"] = context
+    return Subtask(session_id="s1", agent="planner", input=inp)
 
 
 def make_session() -> Session:
@@ -100,3 +103,23 @@ class TestPlannerAgent:
 
         call_kwargs = client.messages.create.call_args[1]
         assert call_kwargs["model"] == "claude-opus-4-7"
+
+    async def test_context_included_in_prompt(self) -> None:
+        client = make_client(VALID_PLAN)
+        agent = PlannerAgent(client=client)
+
+        await agent.run(make_subtask(context="Use FastAPI, no new deps."), make_session())
+
+        call_kwargs = client.messages.create.call_args[1]
+        user_message = call_kwargs["messages"][0]["content"]
+        assert "Use FastAPI, no new deps." in user_message
+
+    async def test_no_context_key_omitted_from_prompt(self) -> None:
+        client = make_client(VALID_PLAN)
+        agent = PlannerAgent(client=client)
+
+        await agent.run(make_subtask(), make_session())
+
+        call_kwargs = client.messages.create.call_args[1]
+        user_message = call_kwargs["messages"][0]["content"]
+        assert "Additional context" not in user_message

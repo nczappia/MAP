@@ -35,3 +35,18 @@ class TestBuildPlannerSubtask:
         session = make_session()
         st = build_planner_subtask(session)
         assert st.session_id == session.id
+
+    def test_context_included_in_input_when_provided(self) -> None:
+        session = make_session()
+        st = build_planner_subtask(session, context="Use FastAPI, no new deps.")
+        assert st.input["context"] == "Use FastAPI, no new deps."
+
+    def test_context_absent_when_not_provided(self) -> None:
+        session = make_session()
+        st = build_planner_subtask(session)
+        assert "context" not in st.input
+
+    def test_context_absent_when_empty_string(self) -> None:
+        session = make_session()
+        st = build_planner_subtask(session, context="")
+        assert "context" not in st.input

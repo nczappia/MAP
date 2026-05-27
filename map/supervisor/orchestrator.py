@@ -29,12 +29,12 @@ class Orchestrator:
     agents: dict[str, BaseAgent]
     config: OrchestratorConfig = field(default_factory=OrchestratorConfig)
 
-    async def run(self, description: str, repo_path: str) -> Session:
+    async def run(self, description: str, repo_path: str, context: str | None = None) -> Session:
         """Start a new session and run the full pipeline."""
         task = Task(description=description, repo_path=repo_path)
         session = Session(task=task)
         await self.store.save_session(session)
-        await self._execute(session)
+        await self._execute(session, context=context)
         return session
 
     async def resume(self, session_id: str) -> Session:
@@ -48,7 +48,7 @@ class Orchestrator:
         await self._execute(session)
         return session
 
-    async def _execute(self, session: Session) -> None:
+    async def _execute(self, session: Session, context: str | None = None) -> None:
         try:
             # Resolve any pending checkpoint first (resume path)
             pending_cp = session.pending_checkpoint
@@ -59,14 +59,14 @@ class Orchestrator:
                     await self.store.save_session(session)
                     return
             # Run (or continue) the idempotent pipeline
-            await self._run_pipeline(session)
+            await self._run_pipeline(session, context=context)
         except Exception as exc:
             logger.error("Session %s failed: %s", session.id, exc)
             session.status = "failed"
             await self.store.save_session(session)
             raise
 
-    async def _run_pipeline(self, session: Session) -> None:
+    async def _run_pipeline(self, session: Session, context: str | None = None) -> None:
         """Run or resume the pipeline, skipping already-completed steps."""
 
         def completed_output(agent: str) -> dict[str, Any] | None:
@@ -81,7 +81,7 @@ class Orchestrator:
         # --- Step 1: Plan ---
         plan = completed_output("planner")
         if plan is None:
-            planner_subtask = build_planner_subtask(session)
+            planner_subtask = build_planner_subtask(session, context=context)
             plan = await self._run_subtask(planner_subtask, session)
 
         # --- Checkpoint 1: Plan approval ---
