@@ -1,0 +1,28 @@
+pipeline:
+  # Pause for human review after reviewer flags issues (always pauses at plan + commit)
+  checkpoint_after_review: false
+  # Open a GitHub PR automatically after commit approval
+  auto_open_pr: false
+  # Seconds to wait for a human reply at a checkpoint before timing out (null = wait forever)
+  checkpoint_timeout_secs: null
+
+comms:
+  channels:
+    - terminal    # always available; reads from stdin
+    - telegram    # enabled when TELEGRAM_BOT_TOKEN is set in .env
+
+agents:
+  # Tools granted to the Implementer agent (Claude Code CLI)
+  implementer_tools:
+    - Edit
+    - Write
+    - Bash
+    - Read
+  # Tools granted to the Tester agent (Claude Code CLI)
+  tester_tools:
+    - Bash
+    - Read
+
+model:
+  # Model used for Planner and Reviewer (Anthropic SDK)
+  default: claude-sonnet-4-6

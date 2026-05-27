@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "map-pipeline"
+version = "0.1.0"
+description = "Multi-Agent Pipeline for automated code tasks with human-in-the-loop checkpoints"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.40",
+    "typer>=0.12",
+    "python-telegram-bot>=21",
+    "pydantic>=2",
+    "aiosqlite>=0.20",
+    "python-dotenv>=1.0",
+    "pyyaml>=6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=5",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pre-commit>=3",
+    "types-pyyaml",
+]
+
+[project.scripts]
+map = "map.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["map"]
+
+# --- Ruff ---
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+# --- Mypy ---
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
+
+# --- Pytest ---
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=map --cov-report=term-missing --cov-fail-under=80"
+
+[tool.coverage.report]
+exclude_lines = [
+    "@abstractmethod",
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]
